@@ -2,6 +2,8 @@
 
 Reproductor local Android con Kotlin, Jetpack Compose y Media3. Versión 1.1.4, Edición nocturna. Android 8.0 o posterior (API 26), objetivo API 36.
 
+![Sublaky en vertical](fastlane/metadata/android/es-ES/images/phoneScreenshots/1.png)
+
 La preparación para F-Droid, las comprobaciones realizadas y los pasos pendientes están en [F_DROID.md](F_DROID.md). La app todavía no está publicada en F-Droid.
 
 ## Abrir y compilar
