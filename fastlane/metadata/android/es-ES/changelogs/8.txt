@@ -1,0 +1,1 @@
+Distribución adaptable en vertical y horizontal, búsqueda fija, lista de canciones con desplazamiento independiente y controles compactos. Acciones de carpetas y escaneo agrupadas en Fuentes. Incluye filtro Solo MP3 y espectro de audio.

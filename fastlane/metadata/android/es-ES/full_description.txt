@@ -1,0 +1,10 @@
+Escucha la música de tu dispositivo Android con una interfaz inspirada en los cassettes.
+
+• Escanea tu biblioteca o selecciona carpetas.
+• Filtra solo MP3 o activa otros formatos compatibles.
+• Busca por canción, artista o álbum.
+• Activa el aleatorio y usa los controles multimedia del sistema.
+• Elige los modos Walkman, Deck, Escritorio y Pantalla completa.
+• Visualiza el espectro de la música reproducida sin acceso al micrófono.
+
+Sublaky funciona localmente, sin cuentas, publicidad ni analítica. No descarga música. Los formatos admitidos dependen del dispositivo y de los decodificadores disponibles. Requiere Android 8.0 o posterior.

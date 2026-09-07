@@ -1,0 +1,1 @@
+Local music player with a cassette design and audio spectrum

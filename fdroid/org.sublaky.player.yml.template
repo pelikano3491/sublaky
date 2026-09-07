@@ -1,0 +1,21 @@
+# DRAFT: validate with fdroid lint and fdroid build on Linux before submission.
+Categories:
+  - Multimedia
+License: MIT
+SourceCode: https://github.com/pelikano3491/sublaky
+IssueTracker: https://github.com/pelikano3491/sublaky/issues
+RepoType: git
+Repo: https://github.com/pelikano3491/sublaky.git
+
+Builds:
+  - versionName: 1.1.4
+    versionCode: 8
+    commit: v1.1.4
+    subdir: app
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 1.1.4
+CurrentVersionCode: 8

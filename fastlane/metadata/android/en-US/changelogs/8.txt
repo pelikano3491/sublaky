@@ -1,0 +1,1 @@
+Adaptive portrait and landscape layouts, pinned library search, independently scrolling song list and compact playback controls. Folder and scanning actions are grouped under Sources. Includes an MP3-only filter and audio spectrum.
