@@ -33,15 +33,16 @@ data class PlayerState(
     val tracks: List<Track> = emptyList(), val scanning: Boolean = false,
     val connected: Boolean = false, val playing: Boolean = false, val shuffle: Boolean = false,
     val currentUri: String = "", val album: String = "", val artwork: Bitmap? = null,
-    val title: String = "Tu música, a tu ritmo", val artist: String = "Biblioteca local",
+    val title: String = "", val artist: String = "",
     val position: Long = 0, val duration: Long = 0, val error: String? = null,
     val mode: VisualMode = VisualMode.AUTO, val excludeVoice: Boolean = true,
     val includeWav: Boolean = false, val onlyMp3: Boolean = true, val folders: Int = 0
 )
 
 class PlayerViewModel(app: Application) : AndroidViewModel(app) {
-    private val prefs = app.getSharedPreferences("sublaky", 0)
-    private val repository = MusicRepository(app)
+    private val appContext = app
+    private val prefs = appContext.getSharedPreferences("sublaky", 0)
+    private val repository = MusicRepository(appContext)
     private val mutable = MutableStateFlow(PlayerState(
         mode = VisualMode.entries.firstOrNull { it.name == prefs.getString("mode", "AUTO") } ?: VisualMode.AUTO,
         excludeVoice = prefs.getBoolean("voice", true), includeWav = prefs.getBoolean("wav", false),
@@ -56,15 +57,17 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     private val future = MediaController.Builder(app, SessionToken(app, ComponentName(app, PlaybackService::class.java))).buildAsync()
     private val listener = object : Player.Listener {
         override fun onEvents(player: Player, events: Player.Events) { refresh() }
-        override fun onPlayerError(error: PlaybackException) { mutable.update { it.copy(error = "No se pudo reproducir este archivo: ${error.errorCodeName}") } }
+        override fun onPlayerError(error: PlaybackException) {
+            mutable.update { it.copy(error = appContext.getString(R.string.player_error, error.errorCodeName)) }
+        }
     }
     init {
         future.addListener({
             try {
                 controller = future.get().also { it.addListener(listener) }
                 refresh()
-            } catch (_: Exception) { mutable.update { it.copy(error = "No se pudo conectar el reproductor.") } }
-        }, ContextCompat.getMainExecutor(app))
+            } catch (_: Exception) { mutable.update { it.copy(error = appContext.getString(R.string.player_connection_error)) } }
+        }, ContextCompat.getMainExecutor(appContext))
         viewModelScope.launch { while (true) { refresh(); delay(500) } }
     }
     private fun trees(): Set<String> = prefs.getStringSet("trees", emptySet()).orEmpty().toSet()
@@ -73,7 +76,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         val uri = p.currentMediaItem?.mediaId.orEmpty()
         mutable.update { it.copy(connected = true, playing = p.isPlaying, shuffle = p.shuffleModeEnabled,
             currentUri = uri, album = p.mediaMetadata.albumTitle?.toString().orEmpty(),
-            title = p.mediaMetadata.title?.toString() ?: "Tu música, a tu ritmo",
+            title = p.mediaMetadata.title?.toString().orEmpty(),
             artist = p.mediaMetadata.artist?.toString().orEmpty(),
             position = p.currentPosition.coerceAtLeast(0), duration = p.duration.coerceAtLeast(0)) }
         if (artworkUri != uri) {
@@ -110,7 +113,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                 val tracks = repository.scan(policy, granted, trees())
                 mutable.update { it.copy(tracks = tracks, scanning = false) }
             } catch (e: CancellationException) { throw e }
-            catch (_: Exception) { mutable.update { it.copy(scanning = false, error = "No se pudo leer la biblioteca. Revisa los permisos o vuelve a elegir la carpeta.") } }
+            catch (_: Exception) { mutable.update { it.copy(scanning = false, error = appContext.getString(R.string.library_scan_error)) } }
         }
     }
     fun addFolder(uri: Uri, granted: Boolean) {
@@ -120,7 +123,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
             prefs.edit().putStringSet("trees", updated).apply()
             mutable.update { it.copy(folders = updated.size) }
             scan(granted)
-        } catch (_: SecurityException) { mutable.update { it.copy(error = "Esta carpeta no permite conservar el acceso.") } }
+        } catch (_: SecurityException) { mutable.update { it.copy(error = appContext.getString(R.string.folder_access_error)) } }
     }
     fun clearFolders(granted: Boolean) {
         trees().forEach { uri ->

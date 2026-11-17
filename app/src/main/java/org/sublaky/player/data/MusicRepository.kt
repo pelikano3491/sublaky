@@ -10,6 +10,7 @@ import androidx.documentfile.provider.DocumentFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
+import org.sublaky.player.R
 import org.sublaky.player.domain.ScanPolicy
 import org.sublaky.player.domain.Track
 import kotlin.coroutines.coroutineContext
@@ -32,7 +33,7 @@ class MusicRepository(private val context: Context) {
         for (tree in trees) {
             val root = DocumentFile.fromTreeUri(context, Uri.parse(tree)) ?: continue
             val pending = ArrayDeque<Pair<DocumentFile, String>>()
-            pending.add(root to (root.name ?: "Carpeta"))
+            pending.add(root to (root.name ?: context.getString(R.string.default_folder_name)))
             while (pending.isNotEmpty()) {
                 coroutineContext.ensureActive()
                 val (directory, parent) = pending.removeFirst()
