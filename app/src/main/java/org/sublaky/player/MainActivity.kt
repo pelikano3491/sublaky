@@ -3,8 +3,10 @@ package org.sublaky.player
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.os.Build
 import android.os.Bundle
+import android.os.LocaleList
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -55,21 +57,39 @@ private const val PREF_LANGUAGE = "preferred_language"
 private fun getSavedLanguage(context: Context): String? =
     context.getSharedPreferences("sublaky", Context.MODE_PRIVATE).getString(PREF_LANGUAGE, null)
 
-private fun applyAppLanguage(context: Context, languageTag: String?) {
-    val normalized = languageTag?.takeIf { it.isNotBlank() } ?: return
-    context.getSharedPreferences("sublaky", Context.MODE_PRIVATE)
-        .edit()
-        .putString(PREF_LANGUAGE, normalized)
-        .apply()
+internal fun systemLocale(): Locale = if (Build.VERSION.SDK_INT >= 24) {
+    Resources.getSystem().configuration.locales.get(0) ?: Locale.ENGLISH
+} else {
+    Resources.getSystem().configuration.locale ?: Locale.ENGLISH
+}
 
-    val locale = when (normalized) {
-        "en" -> Locale.ENGLISH
-        "es", "es-ES" -> Locale("es")
-        else -> Locale.getDefault()
+internal fun detectedSystemLanguageLabel(): String = systemLocale().toLanguageTag()
+
+internal fun localeForLanguageTag(languageTag: String?, fallbackLocale: Locale? = null): Locale = when (languageTag?.takeIf { it.isNotBlank() }) {
+    "en" -> Locale.ENGLISH
+    "es", "es-ES" -> Locale("es")
+    else -> fallbackLocale ?: systemLocale()
+}
+
+private fun applyAppLanguage(context: Context, languageTag: String?) {
+    val prefs = context.getSharedPreferences("sublaky", Context.MODE_PRIVATE)
+    val normalized = languageTag?.takeIf { it.isNotBlank() }
+    val locale = if (normalized == null) systemLocale() else localeForLanguageTag(normalized)
+
+    if (normalized == null) {
+        prefs.edit().remove(PREF_LANGUAGE).apply()
+    } else {
+        prefs.edit().putString(PREF_LANGUAGE, normalized).apply()
     }
+
+    Locale.setDefault(locale)
     val config = context.resources.configuration
-    config.setLocale(locale)
-    context.createConfigurationContext(config)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        config.setLocale(locale)
+        config.setLocales(LocaleList(locale))
+    } else {
+        config.setLocale(locale)
+    }
     context.resources.updateConfiguration(config, context.resources.displayMetrics)
 }
 
@@ -82,7 +102,7 @@ private fun languageTagLabel(languageTag: String?): String = when (languageTag) 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        getSavedLanguage(this)?.takeIf { it.isNotBlank() }?.let { applyAppLanguage(this, it) }
+        applyAppLanguage(this, getSavedLanguage(this))
         enableEdgeToEdge()
         setContent {
             MaterialTheme(colorScheme = darkColorScheme(primary = Amber, onPrimary = Ink,
@@ -104,7 +124,7 @@ private fun Sublaky(vm: PlayerViewModel = viewModel()) {
     val folder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { it?.let { uri -> vm.addFolder(uri, granted()) } }
     var settings by remember { mutableStateOf(false) }
     var languageMenu by remember { mutableStateOf(false) }
-    var selectedLanguage by remember { mutableStateOf(getSavedLanguage(context)) }
+    var selectedLanguage by rememberSaveable { mutableStateOf(getSavedLanguage(context)) }
     var query by rememberSaveable { mutableStateOf("") }
     val window = LocalWindowInfo.current.containerSize
     val wide = with(LocalDensity.current) { window.width.toDp() >= 840.dp }
@@ -138,30 +158,37 @@ private fun Sublaky(vm: PlayerViewModel = viewModel()) {
             Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.onlyMp3, { vm.onlyMp3(it, granted()) }); Text(stringResource(R.string.only_mp3)) }
             Text(if (state.onlyMp3) stringResource(R.string.only_mp3_notice) else stringResource(R.string.mp3_formats))
             Text(stringResource(R.string.language))
-            Box {
-                TextButton(onClick = { languageMenu = true }) {
-                    Text(
-                        when (selectedLanguage) {
-                            "en" -> stringResource(R.string.language_english)
-                            "es", "es-ES" -> stringResource(R.string.language_spanish)
-                            else -> stringResource(R.string.language_system)
-                        }
-                    )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box {
+                    TextButton(onClick = { languageMenu = true }) {
+                        Text(
+                            when (selectedLanguage) {
+                                "en" -> stringResource(R.string.language_english)
+                                "es", "es-ES" -> stringResource(R.string.language_spanish)
+                                else -> stringResource(R.string.language_system)
+                            }
+                        )
+                    }
+                    DropdownMenu(expanded = languageMenu, onDismissRequest = { languageMenu = false }) {
+                        DropdownMenuItem(text = { Text(stringResource(R.string.language_system)) }, onClick = {
+                            languageMenu = false
+                            selectedLanguage = null
+                        })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.language_english)) }, onClick = {
+                            languageMenu = false
+                            selectedLanguage = "en"
+                        })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.language_spanish)) }, onClick = {
+                            languageMenu = false
+                            selectedLanguage = "es"
+                        })
+                    }
                 }
-                DropdownMenu(expanded = languageMenu, onDismissRequest = { languageMenu = false }) {
-                    DropdownMenuItem(text = { Text(stringResource(R.string.language_system)) }, onClick = {
-                        languageMenu = false
-                        selectedLanguage = null
-                    })
-                    DropdownMenuItem(text = { Text(stringResource(R.string.language_english)) }, onClick = {
-                        languageMenu = false
-                        selectedLanguage = "en"
-                    })
-                    DropdownMenuItem(text = { Text(stringResource(R.string.language_spanish)) }, onClick = {
-                        languageMenu = false
-                        selectedLanguage = "es"
-                    })
-                }
+                Text(
+                    "[debug: ${detectedSystemLanguageLabel()}]",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Muted
+                )
             }
             Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.excludeVoice, { vm.settings(it, state.includeWav, granted()) }); Text(stringResource(R.string.exclude_voice_notes)) }
             Text(stringResource(R.string.voice_filter_hint), style = MaterialTheme.typography.bodySmall)
