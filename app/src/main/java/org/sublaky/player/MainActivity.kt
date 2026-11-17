@@ -1,6 +1,7 @@
 package org.sublaky.player
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -41,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.sublaky.player.domain.Track
 import org.sublaky.player.domain.VisualMode
+import java.util.Locale
 
 internal val Ink = Color(0xFF0B0C0D)
 internal val Paper = Color(0xFFE5DDCF)
@@ -48,9 +50,39 @@ internal val Amber = Color(0xFFFF903F)
 internal val Muted = Color(0xFFA4A29C)
 internal val Orange = Color(0xFFCF653B)
 
+private const val PREF_LANGUAGE = "preferred_language"
+
+private fun getSavedLanguage(context: Context): String? =
+    context.getSharedPreferences("sublaky", Context.MODE_PRIVATE).getString(PREF_LANGUAGE, null)
+
+private fun applyAppLanguage(context: Context, languageTag: String?) {
+    val normalized = languageTag?.takeIf { it.isNotBlank() } ?: return
+    context.getSharedPreferences("sublaky", Context.MODE_PRIVATE)
+        .edit()
+        .putString(PREF_LANGUAGE, normalized)
+        .apply()
+
+    val locale = when (normalized) {
+        "en" -> Locale.ENGLISH
+        "es", "es-ES" -> Locale("es")
+        else -> Locale.getDefault()
+    }
+    val config = context.resources.configuration
+    config.setLocale(locale)
+    context.createConfigurationContext(config)
+    context.resources.updateConfiguration(config, context.resources.displayMetrics)
+}
+
+private fun languageTagLabel(languageTag: String?): String = when (languageTag) {
+    "en" -> "English"
+    "es", "es-ES" -> "Español"
+    else -> "System default"
+}
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        getSavedLanguage(this)?.takeIf { it.isNotBlank() }?.let { applyAppLanguage(this, it) }
         enableEdgeToEdge()
         setContent {
             MaterialTheme(colorScheme = darkColorScheme(primary = Amber, onPrimary = Ink,
@@ -70,7 +102,9 @@ private fun Sublaky(vm: PlayerViewModel = viewModel()) {
     var denied by rememberSaveable { mutableStateOf(false) }
     val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { denied = !it; vm.scan(it) }
     val folder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { it?.let { uri -> vm.addFolder(uri, granted()) } }
-    var settings by rememberSaveable { mutableStateOf(false) }
+    var settings by remember { mutableStateOf(false) }
+    var languageMenu by remember { mutableStateOf(false) }
+    var selectedLanguage by remember { mutableStateOf(getSavedLanguage(context)) }
     var query by rememberSaveable { mutableStateOf("") }
     val window = LocalWindowInfo.current.containerSize
     val wide = with(LocalDensity.current) { window.width.toDp() >= 840.dp }
@@ -103,6 +137,32 @@ private fun Sublaky(vm: PlayerViewModel = viewModel()) {
             Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.mode == VisualMode.AUTO, { vm.mode(if (it) VisualMode.AUTO else mode) }); Text(stringResource(R.string.mode_auto_screen)) }
             Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.onlyMp3, { vm.onlyMp3(it, granted()) }); Text(stringResource(R.string.only_mp3)) }
             Text(if (state.onlyMp3) stringResource(R.string.only_mp3_notice) else stringResource(R.string.mp3_formats))
+            Text(stringResource(R.string.language))
+            Box {
+                TextButton(onClick = { languageMenu = true }) {
+                    Text(
+                        when (selectedLanguage) {
+                            "en" -> stringResource(R.string.language_english)
+                            "es", "es-ES" -> stringResource(R.string.language_spanish)
+                            else -> stringResource(R.string.language_system)
+                        }
+                    )
+                }
+                DropdownMenu(expanded = languageMenu, onDismissRequest = { languageMenu = false }) {
+                    DropdownMenuItem(text = { Text(stringResource(R.string.language_system)) }, onClick = {
+                        languageMenu = false
+                        selectedLanguage = null
+                    })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.language_english)) }, onClick = {
+                        languageMenu = false
+                        selectedLanguage = "en"
+                    })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.language_spanish)) }, onClick = {
+                        languageMenu = false
+                        selectedLanguage = "es"
+                    })
+                }
+            }
             Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.excludeVoice, { vm.settings(it, state.includeWav, granted()) }); Text(stringResource(R.string.exclude_voice_notes)) }
             Text(stringResource(R.string.voice_filter_hint), style = MaterialTheme.typography.bodySmall)
             Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.includeWav, { vm.settings(state.excludeVoice, it, granted()) }, enabled = !state.onlyMp3); Text(stringResource(R.string.include_wav)) }
@@ -113,7 +173,13 @@ private fun Sublaky(vm: PlayerViewModel = viewModel()) {
             HorizontalDivider()
             Text(stringResource(R.string.app_about), style = MaterialTheme.typography.bodySmall)
         }
-    }, confirmButton = { TextButton(onClick = { settings = false }) { Text(stringResource(R.string.done)) } })
+    }, confirmButton = {
+        TextButton(onClick = {
+            applyAppLanguage(context, selectedLanguage)
+            settings = false
+            (context as? ComponentActivity)?.recreate()
+        }) { Text(stringResource(R.string.done)) }
+    })
 }
 
 @Composable
@@ -196,7 +262,11 @@ internal fun PlayerPanel(state: PlayerState, mode: VisualMode, vm: PlayerViewMod
             .metalPanel(10.dp).padding(if (portable) 12.dp else 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f).padding(end = 8.dp)) { Eyebrow("SUBLAKY  /  ${if (portable) "PORTABLE" else "STEREO DECK"}", Paper); Eyebrow("SL—01     •     HIGH FIDELITY", Muted) }
+                Column(Modifier.weight(1f).padding(end = 8.dp)) {
+                    val deviceLabel = if (portable) stringResource(R.string.device_portable) else stringResource(R.string.device_stereo_deck)
+                    Eyebrow(stringResource(R.string.player_header_tag, deviceLabel), Paper)
+                    Eyebrow(stringResource(R.string.player_spec_tag, stringResource(R.string.device_high_fidelity)), Muted)
+                }
                 StatusLamp(state.playing)
             }
             BoxWithConstraints {

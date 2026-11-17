@@ -1,6 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Sublaky</string>
+    <string name="language">Language</string>
+    <string name="language_system">System default</string>
+    <string name="language_english">English</string>
+    <string name="language_spanish">Spanish</string>
+    <string name="device_portable">Portable</string>
+    <string name="device_stereo_deck">Stereo deck</string>
+    <string name="device_high_fidelity">High fidelity</string>
+    <string name="status_ready">Ready</string>
+    <string name="status_play">Play</string>
+    <string name="cassette_label">SBL–60</string>
+    <string name="cassette_type_i">TYPE I</string>
+    <string name="cassette_noise">Low noise · High fidelity</string>
+    <string name="frequency_hz">60 Hz</string>
+    <string name="frequency_khz">16 kHz</string>
+    <string name="player_header_tag">SUBLAKY  /  %1$s</string>
+    <string name="player_spec_tag">SL—01     •     %1$s</string>
     <string name="default_title">Your music, your pace</string>
     <string name="default_artist">Local library</string>
     <string name="default_folder_name">Folder</string>

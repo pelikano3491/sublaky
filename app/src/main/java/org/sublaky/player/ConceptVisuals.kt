@@ -118,7 +118,8 @@ internal fun Cassette(state: PlayerState) {
             }
         }
         if (!miniature) Row(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = (20 * scale).dp, vertical = (8 * scale).dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            Eyebrow("SBL–60", Muted); Eyebrow(if (large) "TYPE I" else "LOW NOISE · HIGH FIDELITY", Muted)
+            Eyebrow(stringResource(R.string.cassette_label), Muted)
+        Eyebrow(if (large) stringResource(R.string.cassette_type_i) else stringResource(R.string.cassette_noise), Muted)
         }
     }
 }
@@ -184,9 +185,9 @@ internal fun SpectrumView(playing: Boolean, modifier: Modifier = Modifier, compa
         }
         val enlarged = LocalDensity.current.fontScale > 1.25f
         if (!dense) Row(Modifier.fillMaxWidth().padding(top = 5.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            if (!enlarged) Eyebrow("60 Hz", Muted)
+            if (!enlarged) Eyebrow(stringResource(R.string.frequency_hz), Muted)
             Eyebrow(stringResource(R.string.audio_spectrum), Muted)
-            if (!enlarged) Eyebrow("16 kHz", Muted)
+            if (!enlarged) Eyebrow(stringResource(R.string.frequency_khz), Muted)
         }
     }
 }
