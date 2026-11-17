@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -71,12 +72,12 @@ internal fun Cassette(state: PlayerState) {
         val large = LocalDensity.current.fontScale > 1.25f
         Box(Modifier.padding(horizontal = maxWidth * .047f, vertical = maxHeight * .055f).fillMaxWidth().fillMaxHeight(.80f)
             .clip(RoundedCornerShape(9.dp)).border(1.dp, Color(0xFF8C775E), RoundedCornerShape(9.dp))) {
-            if (state.artwork != null) Image(state.artwork.asImageBitmap(), "Carátula sobre la cinta", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            if (state.artwork != null) Image(state.artwork.asImageBitmap(), stringResource(R.string.artwork_accessibility), Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             else SunsetLabel(Modifier.fillMaxSize())
             Box(Modifier.fillMaxWidth().fillMaxHeight(.42f).background(Brush.verticalGradient(listOf(Color(0xFFF0D5B2).copy(alpha = .9f), Color(0xFFE5C5A2).copy(alpha = .65f), Color.Transparent))))
             if (!miniature) Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = (10 * scale).dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(if (state.currentUri.isBlank()) "Tu mundo en una cinta" else state.title, color = Color(0xFF201C1A), fontSize = (20 * scale).sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                if (!large) Text(state.artist.ifBlank { "Música siempre contigo" }, color = Color(0xFF30251F), fontSize = (11 * scale).sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(if (state.currentUri.isBlank()) stringResource(R.string.cassette_title) else state.title.ifBlank { stringResource(R.string.default_title) }, color = Color(0xFF201C1A), fontSize = (20 * scale).sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (!large) Text(state.artist.ifBlank { stringResource(R.string.music_always_with_you) }, color = Color(0xFF30251F), fontSize = (11 * scale).sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             Text("A", color = Paper, fontFamily = FontFamily.Serif, fontSize = (23 * scale).sp, modifier = Modifier.align(Alignment.CenterEnd).padding(end = (9 * scale).dp, top = (20 * scale).dp))
         }
@@ -117,7 +118,8 @@ internal fun Cassette(state: PlayerState) {
             }
         }
         if (!miniature) Row(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = (20 * scale).dp, vertical = (8 * scale).dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            Eyebrow("SBL–60", Muted); Eyebrow(if (large) "TYPE I" else "LOW NOISE · HIGH FIDELITY", Muted)
+            Eyebrow(stringResource(R.string.cassette_label), Muted)
+        Eyebrow(if (large) stringResource(R.string.cassette_type_i) else stringResource(R.string.cassette_noise), Muted)
         }
     }
 }
@@ -183,9 +185,9 @@ internal fun SpectrumView(playing: Boolean, modifier: Modifier = Modifier, compa
         }
         val enlarged = LocalDensity.current.fontScale > 1.25f
         if (!dense) Row(Modifier.fillMaxWidth().padding(top = 5.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            if (!enlarged) Eyebrow("60 Hz", Muted)
-            Eyebrow("ESPECTRO DE AUDIO", Muted)
-            if (!enlarged) Eyebrow("16 kHz", Muted)
+            if (!enlarged) Eyebrow(stringResource(R.string.frequency_hz), Muted)
+            Eyebrow(stringResource(R.string.audio_spectrum), Muted)
+            if (!enlarged) Eyebrow(stringResource(R.string.frequency_khz), Muted)
         }
     }
 }
@@ -217,7 +219,7 @@ internal fun ModeBar(mode: VisualMode, select: (VisualMode) -> Unit) {
                         }
                     }
                     Box(Modifier.heightIn(min = 32.dp), contentAlignment = Alignment.Center) {
-                        Text(if (item == VisualMode.FULLSCREEN) "Pantalla\ncompleta" else item.label, fontSize = 10.sp, lineHeight = 12.sp, maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        Text(if (item == VisualMode.FULLSCREEN) stringResource(R.string.fullscreen_label) else modeLabel(item), fontSize = 10.sp, lineHeight = 12.sp, maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                     }
                     Box(Modifier.width(42.dp).height(2.dp).background(if (active) Amber else Color.Transparent))
                 }

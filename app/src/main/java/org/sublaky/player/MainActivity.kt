@@ -1,9 +1,12 @@
 package org.sublaky.player
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.os.Build
 import android.os.Bundle
+import android.os.LocaleList
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -28,6 +31,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
@@ -40,6 +44,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.sublaky.player.domain.Track
 import org.sublaky.player.domain.VisualMode
+import java.util.Locale
 
 internal val Ink = Color(0xFF0B0C0D)
 internal val Paper = Color(0xFFE5DDCF)
@@ -47,9 +52,55 @@ internal val Amber = Color(0xFFFF903F)
 internal val Muted = Color(0xFFA4A29C)
 internal val Orange = Color(0xFFCF653B)
 
+private const val PREF_LANGUAGE = "preferred_language"
+
+private fun getSavedLanguage(context: Context): String? =
+    context.getSharedPreferences("sublaky", Context.MODE_PRIVATE).getString(PREF_LANGUAGE, null)
+
+internal fun systemLocale(): Locale = if (Build.VERSION.SDK_INT >= 24) {
+    Resources.getSystem().configuration.locales.get(0) ?: Locale.ENGLISH
+} else {
+    Resources.getSystem().configuration.locale ?: Locale.ENGLISH
+}
+
+internal fun localeForLanguageTag(languageTag: String?, fallbackLocale: Locale? = null): Locale = when (languageTag?.takeIf { it.isNotBlank() }) {
+    "en" -> Locale.ENGLISH
+    "es", "es-ES" -> Locale("es")
+    else -> fallbackLocale ?: systemLocale()
+}
+
+private fun applyAppLanguage(context: Context, languageTag: String?) {
+    val prefs = context.getSharedPreferences("sublaky", Context.MODE_PRIVATE)
+    val normalized = languageTag?.takeIf { it.isNotBlank() }
+    val locale = if (normalized == null) systemLocale() else localeForLanguageTag(normalized)
+
+    if (normalized == null) {
+        prefs.edit().remove(PREF_LANGUAGE).apply()
+    } else {
+        prefs.edit().putString(PREF_LANGUAGE, normalized).apply()
+    }
+
+    Locale.setDefault(locale)
+    val config = context.resources.configuration
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        config.setLocale(locale)
+        config.setLocales(LocaleList(locale))
+    } else {
+        config.setLocale(locale)
+    }
+    context.resources.updateConfiguration(config, context.resources.displayMetrics)
+}
+
+private fun languageTagLabel(languageTag: String?): String = when (languageTag) {
+    "en" -> "English"
+    "es", "es-ES" -> "Español"
+    else -> "System default"
+}
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applyAppLanguage(this, getSavedLanguage(this))
         enableEdgeToEdge()
         setContent {
             MaterialTheme(colorScheme = darkColorScheme(primary = Amber, onPrimary = Ink,
@@ -69,7 +120,9 @@ private fun Sublaky(vm: PlayerViewModel = viewModel()) {
     var denied by rememberSaveable { mutableStateOf(false) }
     val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { denied = !it; vm.scan(it) }
     val folder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { it?.let { uri -> vm.addFolder(uri, granted()) } }
-    var settings by rememberSaveable { mutableStateOf(false) }
+    var settings by remember { mutableStateOf(false) }
+    var languageMenu by remember { mutableStateOf(false) }
+    var selectedLanguage by rememberSaveable { mutableStateOf(getSavedLanguage(context)) }
     var query by rememberSaveable { mutableStateOf("") }
     val window = LocalWindowInfo.current.containerSize
     val wide = with(LocalDensity.current) { window.width.toDp() >= 840.dp }
@@ -90,35 +143,76 @@ private fun Sublaky(vm: PlayerViewModel = viewModel()) {
         Column(Modifier.safeDrawingPadding().fillMaxSize().padding(horizontal = if (wide) 28.dp else 18.dp)) {
             AppHeader(window.width > window.height, { settings = true })
             state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = 8.dp)) }
-            if (denied) Text("Puedes elegir una carpeta o dar permiso de música desde los ajustes de Android.", color = Amber, style = MaterialTheme.typography.bodySmall)
+            if (denied) Text(stringResource(R.string.permission_denied_message), color = Amber, style = MaterialTheme.typography.bodySmall)
             CollectionLayout(state, mode, tracks, query, { query = it }, vm,
                 { request.launch(permission) }, { folder.launch(null) }, { vm.scan(granted()) }, Modifier.weight(1f))
             AdaptiveModeBar(mode, window.width > window.height, vm::mode)
         }
     }
-    if (settings) AlertDialog(onDismissRequest = { settings = false }, title = { Text("A tu manera") }, text = {
+    if (settings) AlertDialog(onDismissRequest = { settings = false }, title = { Text(stringResource(R.string.settings_title)) }, text = {
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Eyebrow("TU BIBLIOTECA", Amber)
-            Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.mode == VisualMode.AUTO, { vm.mode(if (it) VisualMode.AUTO else mode) }); Text("Elegir modo según la pantalla") }
-            Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.onlyMp3, { vm.onlyMp3(it, granted()) }); Text("Solo MP3") }
-            Text(if (state.onlyMp3) "Solo se mostrarán archivos .mp3." else "MP3 · M4A · AAC · FLAC · OGG · OPUS")
-            Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.excludeVoice, { vm.settings(it, state.includeWav, granted()) }); Text("Excluir notas de voz") }
-            Text("Se orienta por nombre, carpeta y etiquetas. Desactívalo si falta algún audio.", style = MaterialTheme.typography.bodySmall)
-            Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.includeWav, { vm.settings(state.excludeVoice, it, granted()) }, enabled = !state.onlyMp3); Text("Incluir WAV") }
+            Eyebrow(stringResource(R.string.library_section_label), Amber)
+            Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.mode == VisualMode.AUTO, { vm.mode(if (it) VisualMode.AUTO else mode) }); Text(stringResource(R.string.mode_auto_screen)) }
+            Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.onlyMp3, { vm.onlyMp3(it, granted()) }); Text(stringResource(R.string.only_mp3)) }
+            Text(if (state.onlyMp3) stringResource(R.string.only_mp3_notice) else stringResource(R.string.mp3_formats))
+            Text(stringResource(R.string.language))
+            Box {
+                TextButton(onClick = { languageMenu = true }) {
+                    Text(
+                        when (selectedLanguage) {
+                            "en" -> stringResource(R.string.language_english)
+                            "es", "es-ES" -> stringResource(R.string.language_spanish)
+                            else -> stringResource(R.string.language_system)
+                        }
+                    )
+                }
+                DropdownMenu(expanded = languageMenu, onDismissRequest = { languageMenu = false }) {
+                    DropdownMenuItem(text = { Text(stringResource(R.string.language_system)) }, onClick = {
+                        languageMenu = false
+                        selectedLanguage = null
+                    })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.language_english)) }, onClick = {
+                        languageMenu = false
+                        selectedLanguage = "en"
+                    })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.language_spanish)) }, onClick = {
+                        languageMenu = false
+                        selectedLanguage = "es"
+                    })
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.excludeVoice, { vm.settings(it, state.includeWav, granted()) }); Text(stringResource(R.string.exclude_voice_notes)) }
+            Text(stringResource(R.string.voice_filter_hint), style = MaterialTheme.typography.bodySmall)
+            Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.includeWav, { vm.settings(state.excludeVoice, it, granted()) }, enabled = !state.onlyMp3); Text(stringResource(R.string.include_wav)) }
             HorizontalDivider()
-            Text("${state.folders} carpetas autorizadas")
-            TextButton(onClick = { folder.launch(null) }) { Text("Añadir una carpeta") }
-            TextButton(onClick = { vm.clearFolders(granted()) }) { Text("Olvidar las carpetas") }
+            Text(stringResource(R.string.authorized_folders, state.folders))
+            TextButton(onClick = { folder.launch(null) }) { Text(stringResource(R.string.add_folder)) }
+            TextButton(onClick = { vm.clearFolders(granted()) }) { Text(stringResource(R.string.forget_folders)) }
             HorizontalDivider()
-            Text("Sublaky 1.1 · Edición nocturna\nMúsica local, sin cuentas ni anuncios.\nEl espectro responde al audio reproducido. No usa el micrófono. Las bobinas son decorativas.", style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.app_about), style = MaterialTheme.typography.bodySmall)
         }
-    }, confirmButton = { TextButton(onClick = { settings = false }) { Text("Listo") } })
+    }, confirmButton = {
+        TextButton(onClick = {
+            applyAppLanguage(context, selectedLanguage)
+            settings = false
+            (context as? ComponentActivity)?.recreate()
+        }) { Text(stringResource(R.string.done)) }
+    })
+}
+
+@Composable
+internal fun modeLabel(mode: VisualMode): String = when (mode) {
+    VisualMode.AUTO -> stringResource(R.string.visual_mode_auto)
+    VisualMode.WALKMAN -> stringResource(R.string.visual_mode_walkman)
+    VisualMode.DECK -> stringResource(R.string.visual_mode_deck)
+    VisualMode.DESKTOP -> stringResource(R.string.visual_mode_desktop)
+    VisualMode.FULLSCREEN -> stringResource(R.string.visual_mode_fullscreen)
 }
 
 @Composable
 private fun ListeningHeading(mode: VisualMode) {
     Column(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 10.dp)) {
-        Eyebrow("${mode.label.uppercase()}  /  LA MÚSICA TAMBIÉN NOS SALVA", Muted)
+        Eyebrow(stringResource(R.string.listening_heading, modeLabel(mode).uppercase()), Muted)
     }
 }
 
@@ -126,8 +220,8 @@ private fun ListeningHeading(mode: VisualMode) {
 internal fun AppHeader(compact: Boolean, settings: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(vertical = if (compact) 0.dp else 8.dp), verticalAlignment = Alignment.CenterVertically) {
         TapeMark(Modifier.size(28.dp))
-        Text("Sublaky", color = Paper, fontWeight = FontWeight.Black, fontSize = if (compact) 23.sp else 32.sp, modifier = Modifier.weight(1f).padding(start = 10.dp))
-        TextButton(onClick = settings) { Text("Ajustes") }
+        Text(stringResource(R.string.app_name), color = Paper, fontWeight = FontWeight.Black, fontSize = if (compact) 23.sp else 32.sp, modifier = Modifier.weight(1f).padding(start = 10.dp))
+        TextButton(onClick = settings) { Text(stringResource(R.string.settings)) }
     }
 }
 
@@ -136,7 +230,7 @@ internal fun AdaptiveModeBar(mode: VisualMode, compact: Boolean, change: (Visual
     if (!compact) ModeBar(mode, change)
     else Row(Modifier.fillMaxWidth().metalPanel(4.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
         VisualMode.entries.filter { it != VisualMode.AUTO }.forEach { item ->
-            TextButton(onClick = { change(item) }) { Text(item.label, color = if (mode == item) Amber else Muted, fontSize = 11.sp) }
+            TextButton(onClick = { change(item) }) { Text(modeLabel(item), color = if (mode == item) Amber else Muted, fontSize = 11.sp) }
         }
     }
 }
@@ -186,7 +280,11 @@ internal fun PlayerPanel(state: PlayerState, mode: VisualMode, vm: PlayerViewMod
             .metalPanel(10.dp).padding(if (portable) 12.dp else 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f).padding(end = 8.dp)) { Eyebrow("SUBLAKY  /  ${if (portable) "PORTABLE" else "STEREO DECK"}", Paper); Eyebrow("SL—01     •     HIGH FIDELITY", Muted) }
+                Column(Modifier.weight(1f).padding(end = 8.dp)) {
+                    val deviceLabel = if (portable) stringResource(R.string.device_portable) else stringResource(R.string.device_stereo_deck)
+                    Eyebrow(stringResource(R.string.player_header_tag, deviceLabel), Paper)
+                    Eyebrow(stringResource(R.string.player_spec_tag, stringResource(R.string.device_high_fidelity)), Muted)
+                }
                 StatusLamp(state.playing)
             }
             BoxWithConstraints {
@@ -198,13 +296,13 @@ internal fun PlayerPanel(state: PlayerState, mode: VisualMode, vm: PlayerViewMod
                 } else Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { Cassette(state); NowPlaying(state); SpectrumView(state.playing); Progress(state, vm) }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TransportKey("Anterior", "previous", false, state.currentUri.isNotEmpty(), Modifier.weight(1f)) { vm?.previous() }
-                TransportKey(if (state.playing) "Pausa" else "Escuchar", if (state.playing) "pause" else "play", true, state.currentUri.isNotEmpty(), Modifier.weight(1.2f)) { vm?.toggle() }
-                TransportKey("Siguiente", "next", false, state.currentUri.isNotEmpty(), Modifier.weight(1f)) { vm?.next() }
+                TransportKey(stringResource(R.string.previous), "previous", false, state.currentUri.isNotEmpty(), Modifier.weight(1f)) { vm?.previous() }
+                TransportKey(if (state.playing) stringResource(R.string.pause) else stringResource(R.string.play), if (state.playing) "pause" else "play", true, state.currentUri.isNotEmpty(), Modifier.weight(1.2f)) { vm?.toggle() }
+                TransportKey(stringResource(R.string.next), "next", false, state.currentUri.isNotEmpty(), Modifier.weight(1f)) { vm?.next() }
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 FilterChip(selected = state.shuffle, onClick = { vm?.toggleShuffle() }, enabled = state.connected,
-                    label = { Text(if (state.shuffle) "Aleatorio · Sí" else "Aleatorio · No", fontSize = 12.sp) },
+                    label = { Text(if (state.shuffle) stringResource(R.string.shuffle_on) else stringResource(R.string.shuffle_off), fontSize = 12.sp) },
                     leadingIcon = { TransportIcon("shuffle", Amber, Modifier.size(17.dp)) },
                     colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF38271B), selectedLabelColor = Amber))
                 SpeakerGrille(Modifier.width(64.dp).height(26.dp))
@@ -216,27 +314,32 @@ internal fun PlayerPanel(state: PlayerState, mode: VisualMode, vm: PlayerViewMod
 @Composable
 private fun NowPlaying(state: PlayerState) {
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(4.dp)).background(Color(0xFF0B0C0D)).border(1.dp, Color(0xFF353633), RoundedCornerShape(4.dp)).padding(12.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        Eyebrow(if (state.currentUri.isEmpty()) "LISTO PARA TU PRIMERA CINTA" else if (state.playing) "AHORA SUENA" else "EN PAUSA", Color(0xFFABA79C))
-        Text(if (state.currentUri.isEmpty()) "Elige una canción" else state.title, color = Color(0xFFEAE0CB), fontSize = 22.sp, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        Text(if (state.currentUri.isEmpty()) "Tu colección te espera abajo" else state.artist.ifBlank { "Artista desconocido" }, color = Color(0xFFABA79C), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Eyebrow(if (state.currentUri.isEmpty()) stringResource(R.string.ready_for_first_tape) else if (state.playing) stringResource(R.string.now_playing_label) else stringResource(R.string.paused_label), Color(0xFFABA79C))
+        Text(if (state.currentUri.isEmpty()) stringResource(R.string.choose_song) else state.title.ifBlank { stringResource(R.string.default_title) }, color = Color(0xFFEAE0CB), fontSize = 22.sp, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Text(if (state.currentUri.isEmpty()) stringResource(R.string.collection_waiting) else state.artist.ifBlank { stringResource(R.string.unknown_artist) }, color = Color(0xFFABA79C), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
 @Composable
 private fun CompactPlayer(state: PlayerState, vm: PlayerViewModel?, dense: Boolean, showTape: Boolean = true) {
+    val previousLabel = stringResource(R.string.previous)
+    val nextLabel = stringResource(R.string.next)
+    val shuffleLabel = stringResource(R.string.shuffle)
+    val playLabel = stringResource(R.string.play)
+    val pauseLabel = stringResource(R.string.pause)
     Column(Modifier.fillMaxWidth().metalPanel(8.dp).padding(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(state.title, color = Paper, fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        if (!dense) Text(state.artist.ifBlank { "Artista desconocido" }, color = Muted, fontSize = 11.sp, maxLines = 1)
+        Text(state.title.ifBlank { stringResource(R.string.default_title) }, color = Paper, fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        if (!dense) Text(state.artist.ifBlank { stringResource(R.string.unknown_artist) }, color = Muted, fontSize = 11.sp, maxLines = 1)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (!dense && showTape) Box(Modifier.width(90.dp)) { Cassette(state) }
             SpectrumView(state.playing, Modifier.weight(1f), compact = true, dense = dense)
         }
         Progress(state, vm)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-            IconButton(modifier = Modifier.semantics { contentDescription = "Anterior" }, onClick = { vm?.previous() }, enabled = state.currentUri.isNotEmpty()) { TransportIcon("previous", Paper, Modifier.size(20.dp)) }
-            TextButton(onClick = { vm?.toggle() }, enabled = state.currentUri.isNotEmpty()) { Text(if (state.playing) "Pausa" else "Escuchar", color = Amber) }
-            IconButton(modifier = Modifier.semantics { contentDescription = "Siguiente" }, onClick = { vm?.next() }, enabled = state.currentUri.isNotEmpty()) { TransportIcon("next", Paper, Modifier.size(20.dp)) }
-            IconToggleButton(modifier = Modifier.semantics { contentDescription = "Aleatorio" }, checked = state.shuffle, onCheckedChange = { vm?.toggleShuffle() }, enabled = state.connected) {
+            IconButton(modifier = Modifier.semantics { contentDescription = previousLabel }, onClick = { vm?.previous() }, enabled = state.currentUri.isNotEmpty()) { TransportIcon("previous", Paper, Modifier.size(20.dp)) }
+            TextButton(onClick = { vm?.toggle() }, enabled = state.currentUri.isNotEmpty()) { Text(if (state.playing) pauseLabel else playLabel, color = Amber) }
+            IconButton(modifier = Modifier.semantics { contentDescription = nextLabel }, onClick = { vm?.next() }, enabled = state.currentUri.isNotEmpty()) { TransportIcon("next", Paper, Modifier.size(20.dp)) }
+            IconToggleButton(modifier = Modifier.semantics { contentDescription = shuffleLabel }, checked = state.shuffle, onCheckedChange = { vm?.toggleShuffle() }, enabled = state.connected) {
                 TransportIcon("shuffle", if (state.shuffle) Amber else Muted, Modifier.size(20.dp))
             }
         }
@@ -271,19 +374,19 @@ private fun LibraryHeader(state: PlayerState, query: String, change: (String) ->
     var sources by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("Colección · ${state.tracks.size}", color = Paper, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.collection_label, state.tracks.size), color = Paper, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
             Box {
-                TextButton(onClick = { sources = true }) { Text("Fuentes") }
+                TextButton(onClick = { sources = true }) { Text(stringResource(R.string.sources)) }
                 DropdownMenu(expanded = sources, onDismissRequest = { sources = false }) {
-                    DropdownMenuItem(text = { Text("Añadir carpeta") }, onClick = { sources = false; folder() })
-                    DropdownMenuItem(text = { Text("Actualizar biblioteca") }, enabled = !state.scanning, onClick = { sources = false; scan() })
-                    DropdownMenuItem(text = { Text("Dar acceso") }, onClick = { sources = false; permission() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.add_folder)) }, onClick = { sources = false; folder() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.update_library)) }, enabled = !state.scanning, onClick = { sources = false; scan() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.grant_access)) }, onClick = { sources = false; permission() })
                 }
             }
         }
         OutlinedTextField(value = query, onValueChange = change, modifier = Modifier.fillMaxWidth(), singleLine = true,
-            placeholder = { Text("Buscar canción, artista o álbum", fontSize = 13.sp) }, shape = RoundedCornerShape(12.dp),
-            trailingIcon = { if (query.isNotEmpty()) TextButton(onClick = { change("") }) { Text("Borrar") } })
+            placeholder = { Text(stringResource(R.string.search_placeholder), fontSize = 13.sp) }, shape = RoundedCornerShape(12.dp),
+            trailingIcon = { if (query.isNotEmpty()) TextButton(onClick = { change("") }) { Text(stringResource(R.string.clear_query)) } })
         if (state.scanning) LinearProgressIndicator(Modifier.fillMaxWidth())
     }
 }
@@ -299,7 +402,7 @@ private fun TrackRow(track: Track, index: Int, state: PlayerState, vm: PlayerVie
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(track.title, color = if (selected) Amber else Paper, fontSize = 14.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(track.artist.ifBlank { "Artista desconocido" }, color = Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(track.artist.ifBlank { stringResource(R.string.unknown_artist) }, color = Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Text(time(track.durationMs), color = Muted, fontSize = 11.sp, fontFamily = FontFamily.Monospace)
     }
@@ -319,8 +422,8 @@ private fun Library(state: PlayerState, tracks: List<Track>, query: String, chan
 @Composable
 private fun EmptyLibrary(scanning: Boolean, searching: Boolean) {
     Column(Modifier.fillMaxWidth().padding(vertical = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(if (scanning) "Buscando tus próximas canciones…" else if (searching) "No encontramos esa canción." else "Toda colección empieza con una cinta.", color = Paper, fontSize = 18.sp)
-        Text(if (searching) "Prueba con otro título o artista." else "Añade una carpeta o da acceso a la música del dispositivo.", color = Muted, fontSize = 13.sp)
+        Text(if (scanning) stringResource(R.string.searching_more) else if (searching) stringResource(R.string.search_no_results) else stringResource(R.string.empty_collection), color = Paper, fontSize = 18.sp)
+        Text(if (searching) stringResource(R.string.try_other_query) else stringResource(R.string.empty_collection_hint), color = Muted, fontSize = 13.sp)
     }
 }
 
