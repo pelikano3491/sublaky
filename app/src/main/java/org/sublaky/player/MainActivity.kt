@@ -63,8 +63,6 @@ internal fun systemLocale(): Locale = if (Build.VERSION.SDK_INT >= 24) {
     Resources.getSystem().configuration.locale ?: Locale.ENGLISH
 }
 
-internal fun detectedSystemLanguageLabel(): String = systemLocale().toLanguageTag()
-
 internal fun localeForLanguageTag(languageTag: String?, fallbackLocale: Locale? = null): Locale = when (languageTag?.takeIf { it.isNotBlank() }) {
     "en" -> Locale.ENGLISH
     "es", "es-ES" -> Locale("es")
@@ -158,37 +156,30 @@ private fun Sublaky(vm: PlayerViewModel = viewModel()) {
             Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.onlyMp3, { vm.onlyMp3(it, granted()) }); Text(stringResource(R.string.only_mp3)) }
             Text(if (state.onlyMp3) stringResource(R.string.only_mp3_notice) else stringResource(R.string.mp3_formats))
             Text(stringResource(R.string.language))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box {
-                    TextButton(onClick = { languageMenu = true }) {
-                        Text(
-                            when (selectedLanguage) {
-                                "en" -> stringResource(R.string.language_english)
-                                "es", "es-ES" -> stringResource(R.string.language_spanish)
-                                else -> stringResource(R.string.language_system)
-                            }
-                        )
-                    }
-                    DropdownMenu(expanded = languageMenu, onDismissRequest = { languageMenu = false }) {
-                        DropdownMenuItem(text = { Text(stringResource(R.string.language_system)) }, onClick = {
-                            languageMenu = false
-                            selectedLanguage = null
-                        })
-                        DropdownMenuItem(text = { Text(stringResource(R.string.language_english)) }, onClick = {
-                            languageMenu = false
-                            selectedLanguage = "en"
-                        })
-                        DropdownMenuItem(text = { Text(stringResource(R.string.language_spanish)) }, onClick = {
-                            languageMenu = false
-                            selectedLanguage = "es"
-                        })
-                    }
+            Box {
+                TextButton(onClick = { languageMenu = true }) {
+                    Text(
+                        when (selectedLanguage) {
+                            "en" -> stringResource(R.string.language_english)
+                            "es", "es-ES" -> stringResource(R.string.language_spanish)
+                            else -> stringResource(R.string.language_system)
+                        }
+                    )
                 }
-                Text(
-                    "[debug: ${detectedSystemLanguageLabel()}]",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Muted
-                )
+                DropdownMenu(expanded = languageMenu, onDismissRequest = { languageMenu = false }) {
+                    DropdownMenuItem(text = { Text(stringResource(R.string.language_system)) }, onClick = {
+                        languageMenu = false
+                        selectedLanguage = null
+                    })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.language_english)) }, onClick = {
+                        languageMenu = false
+                        selectedLanguage = "en"
+                    })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.language_spanish)) }, onClick = {
+                        languageMenu = false
+                        selectedLanguage = "es"
+                    })
+                }
             }
             Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.excludeVoice, { vm.settings(it, state.includeWav, granted()) }); Text(stringResource(R.string.exclude_voice_notes)) }
             Text(stringResource(R.string.voice_filter_hint), style = MaterialTheme.typography.bodySmall)
