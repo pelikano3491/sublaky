@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sublaky</string>
+    <string name="default_title">Tu música, a tu ritmo</string>
+    <string name="default_artist">Biblioteca local</string>
+    <string name="unknown_artist">Artista desconocido</string>
+    <string name="folder_default_name">Carpeta</string>
+
+    <string name="permission_denied_hint">Puedes elegir una carpeta o dar permiso de música desde los ajustes de Android.</string>
+    <string name="settings_title">A tu manera</string>
+    <string name="settings_library_heading">TU BIBLIOTECA</string>
+    <string name="adaptive_mode">Elegir modo según la pantalla</string>
+    <string name="mp3_only">Solo MP3</string>
+    <string name="mp3_only_hint">Solo se mostrarán archivos .mp3.</string>
+    <string name="supported_formats">MP3 · M4A · AAC · FLAC · OGG · OPUS</string>
+    <string name="exclude_voice_notes">Excluir notas de voz</string>
+    <string name="exclude_voice_notes_hint">Se orienta por nombre, carpeta y etiquetas. Desactívalo si falta algún audio.</string>
+    <string name="include_wav">Incluir WAV</string>
+    <plurals name="authorized_folders">
+        <item quantity="one">%d carpeta autorizada</item>
+        <item quantity="other">%d carpetas autorizadas</item>
+    </plurals>
+    <string name="add_folder">Añadir una carpeta</string>
+    <string name="forget_folders">Olvidar las carpetas</string>
+    <string name="about_text">Sublaky 1.2 · Edición nocturna\nMúsica local, sin cuentas ni anuncios.\nEl espectro responde al audio reproducido. No usa el micrófono. Las bobinas son decorativas.</string>
+    <string name="done">Listo</string>
+
+    <string name="music_saves_us_too">LA MÚSICA TAMBIÉN NOS SALVA</string>
+    <string name="settings">Ajustes</string>
+    <string name="portable">PORTÁTIL</string>
+    <string name="stereo_deck">DECK ESTÉREO</string>
+    <string name="previous">Anterior</string>
+    <string name="pause">Pausa</string>
+    <string name="listen">Escuchar</string>
+    <string name="next">Siguiente</string>
+    <string name="shuffle">Aleatorio</string>
+    <string name="shuffle_on">Aleatorio · Sí</string>
+    <string name="shuffle_off">Aleatorio · No</string>
+    <string name="ready_first_tape">LISTO PARA TU PRIMERA CINTA</string>
+    <string name="now_playing">AHORA SUENA</string>
+    <string name="paused">EN PAUSA</string>
+    <string name="choose_song">Elige una canción</string>
+    <string name="collection_waits">Tu colección te espera abajo</string>
+
+    <string name="collection_count">Colección · %1$d</string>
+    <string name="sources">Fuentes</string>
+    <string name="add_folder_short">Añadir carpeta</string>
+    <string name="refresh_library">Actualizar biblioteca</string>
+    <string name="grant_access">Dar acceso</string>
+    <string name="search_hint">Buscar canción, artista o álbum</string>
+    <string name="clear">Borrar</string>
+    <string name="scanning_library">Buscando tus próximas canciones…</string>
+    <string name="no_search_results">No encontramos esa canción.</string>
+    <string name="empty_library">Toda colección empieza con una cinta.</string>
+    <string name="try_another_search">Prueba con otro título o artista.</string>
+    <string name="add_music_hint">Añade una carpeta o da acceso a la música del dispositivo.</string>
+
+    <string name="cover_art_description">Carátula sobre la cinta</string>
+    <string name="tape_default_title">Tu mundo en una cinta</string>
+    <string name="music_always_with_you">Música siempre contigo</string>
+    <string name="audio_spectrum">ESPECTRO DE AUDIO</string>
+    <string name="status_play">PLAY</string>
+    <string name="status_ready">LISTO</string>
+
+    <string name="mode_auto">Auto</string>
+    <string name="mode_walkman">Walkman</string>
+    <string name="mode_deck">Deck</string>
+    <string name="mode_desktop">Escritorio</string>
+    <string name="mode_fullscreen">Pantalla completa</string>
+    <string name="mode_fullscreen_two_lines">Pantalla\ncompleta</string>
+
+    <string name="error_playback">No se pudo reproducir este archivo: %1$s</string>
+    <string name="error_player_connection">No se pudo conectar el reproductor.</string>
+    <string name="error_library_read">No se pudo leer la biblioteca. Revisa los permisos o vuelve a elegir la carpeta.</string>
+    <string name="error_folder_access">Esta carpeta no permite conservar el acceso.</string>
+</resources>

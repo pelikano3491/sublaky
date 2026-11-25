@@ -25,6 +25,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,6 +48,15 @@ internal val Paper = Color(0xFFE5DDCF)
 internal val Amber = Color(0xFFFF903F)
 internal val Muted = Color(0xFFA4A29C)
 internal val Orange = Color(0xFFCF653B)
+
+@Composable
+internal fun visualModeLabel(mode: VisualMode): String = stringResource(when (mode) {
+    VisualMode.AUTO -> R.string.mode_auto
+    VisualMode.WALKMAN -> R.string.mode_walkman
+    VisualMode.DECK -> R.string.mode_deck
+    VisualMode.DESKTOP -> R.string.mode_desktop
+    VisualMode.FULLSCREEN -> R.string.mode_fullscreen
+})
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -90,35 +101,35 @@ private fun Sublaky(vm: PlayerViewModel = viewModel()) {
         Column(Modifier.safeDrawingPadding().fillMaxSize().padding(horizontal = if (wide) 28.dp else 18.dp)) {
             AppHeader(window.width > window.height, { settings = true })
             state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = 8.dp)) }
-            if (denied) Text("Puedes elegir una carpeta o dar permiso de música desde los ajustes de Android.", color = Amber, style = MaterialTheme.typography.bodySmall)
+            if (denied) Text(stringResource(R.string.permission_denied_hint), color = Amber, style = MaterialTheme.typography.bodySmall)
             CollectionLayout(state, mode, tracks, query, { query = it }, vm,
                 { request.launch(permission) }, { folder.launch(null) }, { vm.scan(granted()) }, Modifier.weight(1f))
             AdaptiveModeBar(mode, window.width > window.height, vm::mode)
         }
     }
-    if (settings) AlertDialog(onDismissRequest = { settings = false }, title = { Text("A tu manera") }, text = {
+    if (settings) AlertDialog(onDismissRequest = { settings = false }, title = { Text(stringResource(R.string.settings_title)) }, text = {
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Eyebrow("TU BIBLIOTECA", Amber)
-            Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.mode == VisualMode.AUTO, { vm.mode(if (it) VisualMode.AUTO else mode) }); Text("Elegir modo según la pantalla") }
-            Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.onlyMp3, { vm.onlyMp3(it, granted()) }); Text("Solo MP3") }
-            Text(if (state.onlyMp3) "Solo se mostrarán archivos .mp3." else "MP3 · M4A · AAC · FLAC · OGG · OPUS")
-            Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.excludeVoice, { vm.settings(it, state.includeWav, granted()) }); Text("Excluir notas de voz") }
-            Text("Se orienta por nombre, carpeta y etiquetas. Desactívalo si falta algún audio.", style = MaterialTheme.typography.bodySmall)
-            Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.includeWav, { vm.settings(state.excludeVoice, it, granted()) }, enabled = !state.onlyMp3); Text("Incluir WAV") }
+            Eyebrow(stringResource(R.string.settings_library_heading), Amber)
+            Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.mode == VisualMode.AUTO, { vm.mode(if (it) VisualMode.AUTO else mode) }); Text(stringResource(R.string.adaptive_mode)) }
+            Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.onlyMp3, { vm.onlyMp3(it, granted()) }); Text(stringResource(R.string.mp3_only)) }
+            Text(stringResource(if (state.onlyMp3) R.string.mp3_only_hint else R.string.supported_formats))
+            Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.excludeVoice, { vm.settings(it, state.includeWav, granted()) }); Text(stringResource(R.string.exclude_voice_notes)) }
+            Text(stringResource(R.string.exclude_voice_notes_hint), style = MaterialTheme.typography.bodySmall)
+            Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(state.includeWav, { vm.settings(state.excludeVoice, it, granted()) }, enabled = !state.onlyMp3); Text(stringResource(R.string.include_wav)) }
             HorizontalDivider()
-            Text("${state.folders} carpetas autorizadas")
-            TextButton(onClick = { folder.launch(null) }) { Text("Añadir una carpeta") }
-            TextButton(onClick = { vm.clearFolders(granted()) }) { Text("Olvidar las carpetas") }
+            Text(pluralStringResource(R.plurals.authorized_folders, state.folders, state.folders))
+            TextButton(onClick = { folder.launch(null) }) { Text(stringResource(R.string.add_folder)) }
+            TextButton(onClick = { vm.clearFolders(granted()) }) { Text(stringResource(R.string.forget_folders)) }
             HorizontalDivider()
-            Text("Sublaky 1.1 · Edición nocturna\nMúsica local, sin cuentas ni anuncios.\nEl espectro responde al audio reproducido. No usa el micrófono. Las bobinas son decorativas.", style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.about_text), style = MaterialTheme.typography.bodySmall)
         }
-    }, confirmButton = { TextButton(onClick = { settings = false }) { Text("Listo") } })
+    }, confirmButton = { TextButton(onClick = { settings = false }) { Text(stringResource(R.string.done)) } })
 }
 
 @Composable
 private fun ListeningHeading(mode: VisualMode) {
     Column(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 10.dp)) {
-        Eyebrow("${mode.label.uppercase()}  /  LA MÚSICA TAMBIÉN NOS SALVA", Muted)
+        Eyebrow("${visualModeLabel(mode).uppercase()}  /  ${stringResource(R.string.music_saves_us_too)}", Muted)
     }
 }
 
@@ -126,8 +137,8 @@ private fun ListeningHeading(mode: VisualMode) {
 internal fun AppHeader(compact: Boolean, settings: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(vertical = if (compact) 0.dp else 8.dp), verticalAlignment = Alignment.CenterVertically) {
         TapeMark(Modifier.size(28.dp))
-        Text("Sublaky", color = Paper, fontWeight = FontWeight.Black, fontSize = if (compact) 23.sp else 32.sp, modifier = Modifier.weight(1f).padding(start = 10.dp))
-        TextButton(onClick = settings) { Text("Ajustes") }
+        Text(stringResource(R.string.app_name), color = Paper, fontWeight = FontWeight.Black, fontSize = if (compact) 23.sp else 32.sp, modifier = Modifier.weight(1f).padding(start = 10.dp))
+        TextButton(onClick = settings) { Text(stringResource(R.string.settings)) }
     }
 }
 
@@ -136,7 +147,7 @@ internal fun AdaptiveModeBar(mode: VisualMode, compact: Boolean, change: (Visual
     if (!compact) ModeBar(mode, change)
     else Row(Modifier.fillMaxWidth().metalPanel(4.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
         VisualMode.entries.filter { it != VisualMode.AUTO }.forEach { item ->
-            TextButton(onClick = { change(item) }) { Text(item.label, color = if (mode == item) Amber else Muted, fontSize = 11.sp) }
+            TextButton(onClick = { change(item) }) { Text(visualModeLabel(item), color = if (mode == item) Amber else Muted, fontSize = 11.sp) }
         }
     }
 }
@@ -186,7 +197,7 @@ internal fun PlayerPanel(state: PlayerState, mode: VisualMode, vm: PlayerViewMod
             .metalPanel(10.dp).padding(if (portable) 12.dp else 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f).padding(end = 8.dp)) { Eyebrow("SUBLAKY  /  ${if (portable) "PORTABLE" else "STEREO DECK"}", Paper); Eyebrow("SL—01     •     HIGH FIDELITY", Muted) }
+                Column(Modifier.weight(1f).padding(end = 8.dp)) { Eyebrow("SUBLAKY  /  ${stringResource(if (portable) R.string.portable else R.string.stereo_deck)}", Paper); Eyebrow("SL—01     •     HIGH FIDELITY", Muted) }
                 StatusLamp(state.playing)
             }
             BoxWithConstraints {
@@ -198,13 +209,13 @@ internal fun PlayerPanel(state: PlayerState, mode: VisualMode, vm: PlayerViewMod
                 } else Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { Cassette(state); NowPlaying(state); SpectrumView(state.playing); Progress(state, vm) }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TransportKey("Anterior", "previous", false, state.currentUri.isNotEmpty(), Modifier.weight(1f)) { vm?.previous() }
-                TransportKey(if (state.playing) "Pausa" else "Escuchar", if (state.playing) "pause" else "play", true, state.currentUri.isNotEmpty(), Modifier.weight(1.2f)) { vm?.toggle() }
-                TransportKey("Siguiente", "next", false, state.currentUri.isNotEmpty(), Modifier.weight(1f)) { vm?.next() }
+                TransportKey(stringResource(R.string.previous), "previous", false, state.currentUri.isNotEmpty(), Modifier.weight(1f)) { vm?.previous() }
+                TransportKey(stringResource(if (state.playing) R.string.pause else R.string.listen), if (state.playing) "pause" else "play", true, state.currentUri.isNotEmpty(), Modifier.weight(1.2f)) { vm?.toggle() }
+                TransportKey(stringResource(R.string.next), "next", false, state.currentUri.isNotEmpty(), Modifier.weight(1f)) { vm?.next() }
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 FilterChip(selected = state.shuffle, onClick = { vm?.toggleShuffle() }, enabled = state.connected,
-                    label = { Text(if (state.shuffle) "Aleatorio · Sí" else "Aleatorio · No", fontSize = 12.sp) },
+                    label = { Text(stringResource(if (state.shuffle) R.string.shuffle_on else R.string.shuffle_off), fontSize = 12.sp) },
                     leadingIcon = { TransportIcon("shuffle", Amber, Modifier.size(17.dp)) },
                     colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF38271B), selectedLabelColor = Amber))
                 SpeakerGrille(Modifier.width(64.dp).height(26.dp))
@@ -216,27 +227,30 @@ internal fun PlayerPanel(state: PlayerState, mode: VisualMode, vm: PlayerViewMod
 @Composable
 private fun NowPlaying(state: PlayerState) {
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(4.dp)).background(Color(0xFF0B0C0D)).border(1.dp, Color(0xFF353633), RoundedCornerShape(4.dp)).padding(12.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        Eyebrow(if (state.currentUri.isEmpty()) "LISTO PARA TU PRIMERA CINTA" else if (state.playing) "AHORA SUENA" else "EN PAUSA", Color(0xFFABA79C))
-        Text(if (state.currentUri.isEmpty()) "Elige una canción" else state.title, color = Color(0xFFEAE0CB), fontSize = 22.sp, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        Text(if (state.currentUri.isEmpty()) "Tu colección te espera abajo" else state.artist.ifBlank { "Artista desconocido" }, color = Color(0xFFABA79C), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Eyebrow(stringResource(if (state.currentUri.isEmpty()) R.string.ready_first_tape else if (state.playing) R.string.now_playing else R.string.paused), Color(0xFFABA79C))
+        Text(if (state.currentUri.isEmpty()) stringResource(R.string.choose_song) else state.title, color = Color(0xFFEAE0CB), fontSize = 22.sp, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Text(if (state.currentUri.isEmpty()) stringResource(R.string.collection_waits) else state.artist.ifBlank { stringResource(R.string.unknown_artist) }, color = Color(0xFFABA79C), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
 @Composable
 private fun CompactPlayer(state: PlayerState, vm: PlayerViewModel?, dense: Boolean, showTape: Boolean = true) {
+    val previous = stringResource(R.string.previous)
+    val next = stringResource(R.string.next)
+    val shuffle = stringResource(R.string.shuffle)
     Column(Modifier.fillMaxWidth().metalPanel(8.dp).padding(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(state.title, color = Paper, fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        if (!dense) Text(state.artist.ifBlank { "Artista desconocido" }, color = Muted, fontSize = 11.sp, maxLines = 1)
+        Text(state.title.ifBlank { stringResource(R.string.default_title) }, color = Paper, fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        if (!dense) Text(state.artist.ifBlank { stringResource(R.string.unknown_artist) }, color = Muted, fontSize = 11.sp, maxLines = 1)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (!dense && showTape) Box(Modifier.width(90.dp)) { Cassette(state) }
             SpectrumView(state.playing, Modifier.weight(1f), compact = true, dense = dense)
         }
         Progress(state, vm)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-            IconButton(modifier = Modifier.semantics { contentDescription = "Anterior" }, onClick = { vm?.previous() }, enabled = state.currentUri.isNotEmpty()) { TransportIcon("previous", Paper, Modifier.size(20.dp)) }
-            TextButton(onClick = { vm?.toggle() }, enabled = state.currentUri.isNotEmpty()) { Text(if (state.playing) "Pausa" else "Escuchar", color = Amber) }
-            IconButton(modifier = Modifier.semantics { contentDescription = "Siguiente" }, onClick = { vm?.next() }, enabled = state.currentUri.isNotEmpty()) { TransportIcon("next", Paper, Modifier.size(20.dp)) }
-            IconToggleButton(modifier = Modifier.semantics { contentDescription = "Aleatorio" }, checked = state.shuffle, onCheckedChange = { vm?.toggleShuffle() }, enabled = state.connected) {
+            IconButton(modifier = Modifier.semantics { contentDescription = previous }, onClick = { vm?.previous() }, enabled = state.currentUri.isNotEmpty()) { TransportIcon("previous", Paper, Modifier.size(20.dp)) }
+            TextButton(onClick = { vm?.toggle() }, enabled = state.currentUri.isNotEmpty()) { Text(stringResource(if (state.playing) R.string.pause else R.string.listen), color = Amber) }
+            IconButton(modifier = Modifier.semantics { contentDescription = next }, onClick = { vm?.next() }, enabled = state.currentUri.isNotEmpty()) { TransportIcon("next", Paper, Modifier.size(20.dp)) }
+            IconToggleButton(modifier = Modifier.semantics { contentDescription = shuffle }, checked = state.shuffle, onCheckedChange = { vm?.toggleShuffle() }, enabled = state.connected) {
                 TransportIcon("shuffle", if (state.shuffle) Amber else Muted, Modifier.size(20.dp))
             }
         }
@@ -271,19 +285,19 @@ private fun LibraryHeader(state: PlayerState, query: String, change: (String) ->
     var sources by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("Colección · ${state.tracks.size}", color = Paper, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.collection_count, state.tracks.size), color = Paper, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
             Box {
-                TextButton(onClick = { sources = true }) { Text("Fuentes") }
+                TextButton(onClick = { sources = true }) { Text(stringResource(R.string.sources)) }
                 DropdownMenu(expanded = sources, onDismissRequest = { sources = false }) {
-                    DropdownMenuItem(text = { Text("Añadir carpeta") }, onClick = { sources = false; folder() })
-                    DropdownMenuItem(text = { Text("Actualizar biblioteca") }, enabled = !state.scanning, onClick = { sources = false; scan() })
-                    DropdownMenuItem(text = { Text("Dar acceso") }, onClick = { sources = false; permission() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.add_folder_short)) }, onClick = { sources = false; folder() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.refresh_library)) }, enabled = !state.scanning, onClick = { sources = false; scan() })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.grant_access)) }, onClick = { sources = false; permission() })
                 }
             }
         }
         OutlinedTextField(value = query, onValueChange = change, modifier = Modifier.fillMaxWidth(), singleLine = true,
-            placeholder = { Text("Buscar canción, artista o álbum", fontSize = 13.sp) }, shape = RoundedCornerShape(12.dp),
-            trailingIcon = { if (query.isNotEmpty()) TextButton(onClick = { change("") }) { Text("Borrar") } })
+            placeholder = { Text(stringResource(R.string.search_hint), fontSize = 13.sp) }, shape = RoundedCornerShape(12.dp),
+            trailingIcon = { if (query.isNotEmpty()) TextButton(onClick = { change("") }) { Text(stringResource(R.string.clear)) } })
         if (state.scanning) LinearProgressIndicator(Modifier.fillMaxWidth())
     }
 }
@@ -299,7 +313,7 @@ private fun TrackRow(track: Track, index: Int, state: PlayerState, vm: PlayerVie
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(track.title, color = if (selected) Amber else Paper, fontSize = 14.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(track.artist.ifBlank { "Artista desconocido" }, color = Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(track.artist.ifBlank { stringResource(R.string.unknown_artist) }, color = Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Text(time(track.durationMs), color = Muted, fontSize = 11.sp, fontFamily = FontFamily.Monospace)
     }
@@ -319,8 +333,8 @@ private fun Library(state: PlayerState, tracks: List<Track>, query: String, chan
 @Composable
 private fun EmptyLibrary(scanning: Boolean, searching: Boolean) {
     Column(Modifier.fillMaxWidth().padding(vertical = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(if (scanning) "Buscando tus próximas canciones…" else if (searching) "No encontramos esa canción." else "Toda colección empieza con una cinta.", color = Paper, fontSize = 18.sp)
-        Text(if (searching) "Prueba con otro título o artista." else "Añade una carpeta o da acceso a la música del dispositivo.", color = Muted, fontSize = 13.sp)
+        Text(stringResource(if (scanning) R.string.scanning_library else if (searching) R.string.no_search_results else R.string.empty_library), color = Paper, fontSize = 18.sp)
+        Text(stringResource(if (searching) R.string.try_another_search else R.string.add_music_hint), color = Muted, fontSize = 13.sp)
     }
 }
 

@@ -54,6 +54,10 @@ private fun CollectionPreview(mode: VisualMode, landscape: Boolean = false) {
 }
 @PreviewTest @Preview(widthDp = 600, heightDp = 960) @Composable
 fun CollectionPortrait() { CollectionPreview(VisualMode.DECK) }
+@PreviewTest @Preview(name = "English UI", widthDp = 600, heightDp = 960, locale = "en") @Composable
+fun CollectionEnglish() { CollectionPreview(VisualMode.DECK) }
+@PreviewTest @Preview(name = "Interfaz en español", widthDp = 600, heightDp = 960, locale = "es") @Composable
+fun CollectionSpanish() { CollectionPreview(VisualMode.DECK) }
 @PreviewTest @Preview(widthDp = 960, heightDp = 600) @Composable
 fun CollectionLandscape() { CollectionPreview(VisualMode.DECK, true) }
 @PreviewTest @Preview(widthDp = 360, heightDp = 800) @Composable

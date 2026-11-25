@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -30,7 +31,7 @@ import kotlin.math.sin
 internal fun StatusLamp(playing: Boolean) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
         Canvas(Modifier.size(8.dp)) { drawCircle(if (playing) Amber else Color(0xFF55534E)) }
-        Eyebrow(if (playing) "PLAY" else "READY", if (playing) Amber else Muted)
+        Eyebrow(stringResource(if (playing) R.string.status_play else R.string.status_ready), if (playing) Amber else Muted)
     }
 }
 

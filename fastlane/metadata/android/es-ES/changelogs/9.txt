@@ -1,0 +1,1 @@
+Sublaky ahora habla inglés. La interfaz completa, los errores, controles, modos visuales y descripciones de accesibilidad están disponibles en español e inglés. Android elige el idioma automáticamente y permite cambiarlo por aplicación en versiones compatibles.

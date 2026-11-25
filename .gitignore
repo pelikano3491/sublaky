@@ -1,5 +1,7 @@
 .gradle/
 .kotlin/
+.android-user/
+app/src/screenshotTestDebug/
 **/build/
 local.properties
 .idea/

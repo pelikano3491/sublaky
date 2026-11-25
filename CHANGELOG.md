@@ -1,3 +1,11 @@
+# 1.2.0 — Sublaky speaks English
+
+- Interfaz completa en inglés y español, seleccionada automáticamente según el idioma de Android.
+- Textos, errores, controles, modos y descripciones de accesibilidad migrados a recursos localizables.
+- Selector de idioma por aplicación disponible en versiones compatibles de Android.
+- Recursos plurales para el número de carpetas autorizadas y pruebas visuales específicas para ambos idiomas.
+- Mantiene reproducción local, modos, visualizador, búsqueda, filtros y R8. VersionCode 9.
+
 # 1.1.4 — Distribución adaptable
 
 - Revisión visual con Compose en tamaños de teléfono y tablet, en vertical y horizontal.

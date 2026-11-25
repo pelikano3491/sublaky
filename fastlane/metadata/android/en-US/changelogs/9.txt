@@ -1,0 +1,1 @@
+Sublaky now speaks English. The full interface, errors, playback controls, visual modes and accessibility descriptions are available in English and Spanish. Android selects the language automatically, with per-app language settings on supported versions.

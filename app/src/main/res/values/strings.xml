@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sublaky</string>
+    <string name="default_title">Your music, your rhythm</string>
+    <string name="default_artist">Local library</string>
+    <string name="unknown_artist">Unknown artist</string>
+    <string name="folder_default_name">Folder</string>
+
+    <string name="permission_denied_hint">You can choose a folder or grant music access from Android settings.</string>
+    <string name="settings_title">Your way</string>
+    <string name="settings_library_heading">YOUR LIBRARY</string>
+    <string name="adaptive_mode">Choose the mode for the screen automatically</string>
+    <string name="mp3_only">MP3 only</string>
+    <string name="mp3_only_hint">Only .mp3 files will be shown.</string>
+    <string name="supported_formats">MP3 · M4A · AAC · FLAC · OGG · OPUS</string>
+    <string name="exclude_voice_notes">Exclude voice notes</string>
+    <string name="exclude_voice_notes_hint">Uses names, folders and tags as clues. Turn it off if an audio file is missing.</string>
+    <string name="include_wav">Include WAV</string>
+    <plurals name="authorized_folders">
+        <item quantity="one">%d authorized folder</item>
+        <item quantity="other">%d authorized folders</item>
+    </plurals>
+    <string name="add_folder">Add a folder</string>
+    <string name="forget_folders">Forget folders</string>
+    <string name="about_text">Sublaky 1.2 · Night edition\nLocal music, without accounts or ads.\nThe spectrum responds to the audio being played. It does not use the microphone. The reels are decorative.</string>
+    <string name="done">Done</string>
+
+    <string name="music_saves_us_too">MUSIC SAVES US TOO</string>
+    <string name="settings">Settings</string>
+    <string name="portable">PORTABLE</string>
+    <string name="stereo_deck">STEREO DECK</string>
+    <string name="previous">Previous</string>
+    <string name="pause">Pause</string>
+    <string name="listen">Listen</string>
+    <string name="next">Next</string>
+    <string name="shuffle">Shuffle</string>
+    <string name="shuffle_on">Shuffle · On</string>
+    <string name="shuffle_off">Shuffle · Off</string>
+    <string name="ready_first_tape">READY FOR YOUR FIRST TAPE</string>
+    <string name="now_playing">NOW PLAYING</string>
+    <string name="paused">PAUSED</string>
+    <string name="choose_song">Choose a song</string>
+    <string name="collection_waits">Your collection is waiting below</string>
+
+    <string name="collection_count">Collection · %1$d</string>
+    <string name="sources">Sources</string>
+    <string name="add_folder_short">Add folder</string>
+    <string name="refresh_library">Refresh library</string>
+    <string name="grant_access">Grant access</string>
+    <string name="search_hint">Search by song, artist or album</string>
+    <string name="clear">Clear</string>
+    <string name="scanning_library">Finding your next songs…</string>
+    <string name="no_search_results">We could not find that song.</string>
+    <string name="empty_library">Every collection starts with a tape.</string>
+    <string name="try_another_search">Try another title or artist.</string>
+    <string name="add_music_hint">Add a folder or grant access to music on this device.</string>
+
+    <string name="cover_art_description">Cover art on the tape</string>
+    <string name="tape_default_title">Your world on a tape</string>
+    <string name="music_always_with_you">Music always with you</string>
+    <string name="audio_spectrum">AUDIO SPECTRUM</string>
+    <string name="status_play">PLAY</string>
+    <string name="status_ready">READY</string>
+
+    <string name="mode_auto">Auto</string>
+    <string name="mode_walkman">Walkman</string>
+    <string name="mode_deck">Deck</string>
+    <string name="mode_desktop">Desktop</string>
+    <string name="mode_fullscreen">Fullscreen</string>
+    <string name="mode_fullscreen_two_lines">Full\nscreen</string>
+
+    <string name="error_playback">Could not play this file: %1$s</string>
+    <string name="error_player_connection">Could not connect to the player.</string>
+    <string name="error_library_read">Could not read the library. Check the permissions or choose the folder again.</string>
+    <string name="error_folder_access">This folder does not allow persistent access.</string>
+</resources>

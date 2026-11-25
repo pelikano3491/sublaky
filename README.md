@@ -1,10 +1,10 @@
 # Sublaky
 
-Reproductor local Android con Kotlin, Jetpack Compose y Media3. Versión 1.1.4, Edición nocturna. Android 8.0 o posterior (API 26), objetivo API 36.
+Reproductor local Android con Kotlin, Jetpack Compose y Media3. Versión 1.2.0, Edición nocturna. Android 8.0 o posterior (API 26), objetivo API 36. Interfaz disponible en español e inglés, seleccionada automáticamente según el idioma de Android.
 
 ![Sublaky en vertical](fastlane/metadata/android/es-ES/images/phoneScreenshots/1.png)
 
-La preparación para F-Droid, las comprobaciones realizadas y los pasos pendientes están en [F_DROID.md](F_DROID.md). La app todavía no está publicada en F-Droid.
+Sublaky está publicada en [F-Droid](https://f-droid.org/packages/org.sublaky.player/). Las comprobaciones de compilación y el flujo de actualización se documentan en [F_DROID.md](F_DROID.md).
 
 ## Abrir y compilar
 
@@ -35,6 +35,7 @@ APK de prueba: `app/build/outputs/apk/debug/app-debug.apk`. Se firma automática
 - MediaSessionService: reproducción en segundo plano, controles del sistema, foco de audio y pausa al desconectar auriculares.
 - Walkman, Deck, Escritorio, Pantalla completa y elección automática. Composición de dos columnas en pantallas anchas; controles accesibles mediante desplazamiento en pantallas pequeñas. Pantalla completa oculta las barras del sistema.
 - Preferencias persistentes; ilustración vectorial de cassette propia, sin assets descargados.
+- Interfaz completa en inglés y español, incluido texto de accesibilidad y selector de idioma por aplicación en Android compatible.
 
 Los archivos que Android no indexa pueden requerir seleccionar su carpeta. Android restringe determinadas carpetas, como Android/data; Sublaky no evita esas restricciones. Un mismo archivo expuesto por MediaStore y un proveedor de documentos puede aparecer dos veces porque sus URI son distintas. Solo se deduplican URI idénticas.
 
@@ -66,7 +67,7 @@ El código y las ilustraciones originales se entregan bajo MIT. Sin permiso INTE
 
 `./gradlew.bat assembleRelease` genera una versión release sin firmar. Para distribuir una versión estable, crea y conserva tu propia clave desde **Build > Generate Signed Bundle / APK** en Android Studio. No guardes claves ni contraseñas en Git. Conserva siempre la clave para futuras actualizaciones.
 
-Para solicitar inclusión en F-Droid faltan: repositorio público, revisión completa de dependencias/licencias, etiquetas de versiones, metadatos con URL real del repositorio y validación por F-Droid. No se ha publicado ni enviado una solicitud. La compatibilidad futura es un objetivo, no una aprobación de F-Droid.
+F-Droid compila y firma la aplicación desde las etiquetas publicadas en este repositorio. Cada lanzamiento incrementa `versionCode`, actualiza los changelogs de Fastlane y publica una etiqueta anotada que coincide con `versionName`.
 
 Referencias oficiales:
 - https://developer.android.com/media/media3/session/background-playback

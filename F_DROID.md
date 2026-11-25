@@ -1,6 +1,9 @@
 # Candidatura de Sublaky a F-Droid
 
-## Estado de la preparación
+> **Estado actualizado:** Sublaky está publicada en F-Droid: https://f-droid.org/packages/org.sublaky.player/
+> La versión 1.2.0 (`versionCode` 9) añade interfaz completa en inglés y español. Para actualizar, se prueban los cambios, se publican en `main` y se crea una etiqueta anotada que coincida con `versionName`; la receta oficial comprueba etiquetas nuevas.
+
+## Registro histórico de la preparación de 1.1.4
 
 Versión candidata: 1.1.4, versionCode 8, identificador de producción `org.sublaky.player`.
 
@@ -11,7 +14,7 @@ Versión candidata: 1.1.4, versionCode 8, identificador de producción `org.subl
 - El manifiesto final no solicita INTERNET ni RECORD_AUDIO. ACCESS_NETWORK_STATE procede de las dependencias multimedia.
 - Plantilla de metadatos incluida con marcadores explícitos. NO está lista para enviarse sin completar y validar.
 
-## Pendiente antes del envío
+## Lista histórica previa al envío (completada)
 
 1. Publicar y revisar el repositorio público https://github.com/pelikano3491/sublaky con este código, la licencia y los recursos. Excluir claves, cachés, APK y archivos locales.
 2. Confirmar el nombre público del autor. Crear y verificar la etiqueta `v1.1.4` sobre el commit publicado.

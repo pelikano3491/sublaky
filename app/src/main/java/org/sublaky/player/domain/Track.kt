@@ -29,6 +29,4 @@ data class ScanPolicy(
     }
 }
 
-enum class VisualMode(val label: String) {
-    AUTO("Auto"), WALKMAN("Walkman"), DECK("Deck"), DESKTOP("Escritorio"), FULLSCREEN("Pantalla completa")
-}
+enum class VisualMode { AUTO, WALKMAN, DECK, DESKTOP, FULLSCREEN }
